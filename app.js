@@ -7,7 +7,10 @@
 // ================================================================
 // CONSTANTS
 // ================================================================
-const CORS_PROXY     = 'https://api.allorigins.win/get?url=';
+// CORREÇÃO: Trocando o CORS_PROXY para um mais estável.
+// O 'https://api.allorigins.win' é muito instável e causa erros 408/Load failed.
+// 'https://corsproxy.io/?' é uma alternativa pública mais robusta.
+const CORS_PROXY     = 'https://corsproxy.io/?';
 const OPENROUTER_API = 'https://openrouter.ai/api/v1/chat/completions';
 const INVIDIOUS_INSTANCES = [
   'https://invidious.privacydev.net',
@@ -253,6 +256,15 @@ async function fetchChannelVideos(rawUrl, count) {
   if (plMatch)  playlistId = plMatch[1];
   if (cidMatch) channelId  = cidMatch[1];
   if (hMatch)   handle     = hMatch[1];
+
+  // CORREÇÃO: Adicionando validação para aceitar @handle sem a URL completa
+  // Se a URL for apenas "@handle", o hMatch não encontra, então tratamos aqui.
+  if (!channelId && !handle && !playlistId) {
+      const simpleHandleMatch = rawUrl.match(/^@([^\/\?]+)$/);
+      if (simpleHandleMatch) {
+          handle = simpleHandleMatch[1];
+      }
+  }
 
   if (!channelId && !handle && !playlistId)
     throw new Error('URL inválida. Use @handle, /channel/UCxxx ou uma playlist do YouTube.');
@@ -647,7 +659,7 @@ BRIEFING:
 - Idioma Principal: ${briefing.idioma_principal}
 
 O Prompt Mestre deve:
-1. Definir claramente o tom e estilo narrativo do canal
+1. Definir claramente o tone e estilo narrativo do canal
 2. Especificar a estrutura exata do roteiro (gancho, desenvolvimento, clímax, CTA)
 3. Incluir instruções sobre vocabulário, ritmo e linguagem
 4. Definir como criar ganchos iniciais impactantes
@@ -1020,7 +1032,7 @@ function loadSettingsForm() {
   $('analysis-model-select').innerHTML   = opts;
   $('generation-model-select').innerHTML = opts;
   $('analysis-model-select').value   = state.settings.analysisModel;
-  $('generation-model-select').value = state.settings.generationModel;
+  $('generation-model-select').value = state.settings.analysisModel;
 
   $('analysis-model-custom').value   = state.settings.analysisModelCustom || '';
   $('generation-model-custom').value = state.settings.generationModelCustom || '';
@@ -1096,18 +1108,30 @@ function setProgress(scope, pct, msg) {
 // PROXY HELPERS
 // ================================================================
 async function proxyFetch(url) {
-  const r = await fetch(CORS_PROXY + encodeURIComponent(url));
+  // CORREÇÃO: Adicionando o prefixo 'https://' se o URL do proxy não tiver
+  // Isso é necessário para o corsproxy.io, que espera a URL completa do destino.
+  const targetUrl = url.startsWith('http') ? url : `https://${url}`;
+  const r = await fetch(CORS_PROXY + encodeURIComponent(targetUrl));
   if (!r.ok) throw new Error(`Proxy error ${r.status}`);
   const data = await r.json();
-  if (!data.contents) throw new Error('Empty proxy response');
-  return JSON.parse(data.contents);
+  // CORREÇÃO: corsproxy.io retorna o conteúdo diretamente, não dentro de 'contents'
+  // Também pode retornar JSON ou texto puro, então tentamos JSON.parse
+  let content = data;
+  if (typeof data === 'string') {
+      try { content = JSON.parse(data); } catch (_) {}
+  }
+  if (!content) throw new Error('Empty proxy response');
+  return content;
 }
 
 async function proxyRaw(url) {
-  const r = await fetch(CORS_PROXY + encodeURIComponent(url));
+  // CORREÇÃO: Adicionando o prefixo 'https://' se o URL do proxy não tiver
+  const targetUrl = url.startsWith('http') ? url : `https://${url}`;
+  const r = await fetch(CORS_PROXY + encodeURIComponent(targetUrl));
   if (!r.ok) throw new Error(`Proxy error ${r.status}`);
-  const data = await r.json();
-  return data.contents || '';
+  // CORREÇÃO: corsproxy.io retorna o conteúdo diretamente como texto
+  const data = await r.text();
+  return data || '';
 }
 
 // ================================================================
