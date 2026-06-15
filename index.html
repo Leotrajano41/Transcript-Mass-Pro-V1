@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transcript Mass Pro V1 — Extrator + Gerador de Roteiros</title>
+  <meta name="description" content="Extraia transcrições do YouTube, analise canais com IA e gere roteiros em massa. A ferramenta completa para criadores de conteúdo.">
+  <meta name="theme-color" content="#090b18">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- JSZip for ZIP download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================================================================
+     HEADER
+     ================================================================ -->
+<header class="header">
+
+  <!-- Logo -->
+  <a href="#" class="logo" id="logo-link">
+    <div class="logo-icon">📋</div>
+    <div>
+      <span class="logo-name">Transcript Mass </span><span class="logo-pro">PRO</span>
+    </div>
+  </a>
+
+  <div class="header-sep"></div>
+  <span class="header-subtitle">Extrator + Gerador de Roteiros</span>
+
+  <!-- Tab Navigation -->
+  <nav class="tabs-nav" role="tablist" aria-label="Módulos">
+    <button class="tab-btn active" data-tab="extract" role="tab"
+            aria-selected="true" aria-controls="tab-extract" id="tab-btn-extract">
+      <span class="tab-icon">📥</span> Extrair Transcrições
+    </button>
+    <button class="tab-btn" data-tab="scripts" role="tab"
+            aria-selected="false" aria-controls="tab-scripts" id="tab-btn-scripts">
+      <span class="tab-icon">✍️</span> Gerar Roteiros
+    </button>
+    <button class="tab-btn" data-tab="results" role="tab"
+            aria-selected="false" aria-controls="tab-results" id="tab-btn-results">
+      <span class="tab-icon">📄</span> Resultados
+    </button>
+  </nav>
+
+  <!-- Actions -->
+  <div class="header-actions">
+    <div class="api-status">
+      <div class="api-dot" id="api-status-dot"></div>
+      <span id="api-status-label">Sem API Key</span>
+    </div>
+    <button class="btn-settings" id="btn-settings" aria-label="Abrir configurações">
+      ⚙️ Configurações
+    </button>
+  </div>
+
+</header>
+
+<!-- ================================================================
+     MAIN
+     ================================================================ -->
+<main class="main">
+
+  <!-- ==============================================================
+       TAB 1 — EXTRAIR TRANSCRIÇÕES
+       ============================================================== -->
+  <div class="tab-panel active" id="tab-extract" role="tabpanel" aria-labelledby="tab-btn-extract">
+
+    <!-- 1.1 URL -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">1</div>
+        <div>
+          <div class="card-title">URL do Canal ou Playlist</div>
+          <div class="card-subtitle">Cole a URL do canal do YouTube ou de uma playlist</div>
+        </div>
+      </div>
+
+      <input
+        type="url"
+        id="channel-url"
+        class="input"
+        placeholder="https://www.youtube.com/@nome_do_canal/videos"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="URL do canal ou playlist"
+      >
+
+      <div class="hint mt-12">
+        <span class="hint-icon">💡</span>
+        <span>Suporta: <strong>@handle</strong> (youtube.com/@mrchannel), <strong>/channel/UCxxx</strong> e links de <strong>playlist</strong> (?list=PLxxx)</span>
+      </div>
+    </div>
+
+    <!-- 1.2 Configurações de Extração -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">2</div>
+        <div>
+          <div class="card-title">Configurações de Extração</div>
+        </div>
+      </div>
+
+      <!-- Quantidade -->
+      <label class="input-label">Quantidade de Vídeos</label>
+      <div class="btn-group" id="qty-group">
+        <button class="btn-option" data-qty="5"  id="qty-5">5</button>
+        <button class="btn-option" data-qty="10" id="qty-10">10</button>
+        <button class="btn-option" data-qty="20" id="qty-20">20</button>
+        <button class="btn-option" data-qty="50" id="qty-50">50</button>
+        <button class="btn-option" data-qty="other" id="qty-other">Outro</button>
+        <input
+          type="number"
+          id="qty-input"
+          class="input btn-option-num hidden"
+          min="1"
+          max="200"
+          placeholder="Ex: 30"
+          aria-label="Quantidade personalizada"
+        >
+      </div>
+      <div class="hint mt-12">
+        <span class="hint-icon">⚠️</span>
+        <span>Para melhor análise de estilo, comece com <strong>5–10 vídeos</strong>. Quantidades maiores podem diluir o estilo detectado.</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Idiomas -->
+      <label class="input-label">Idiomas Preferidos para Transcrição</label>
+      <div class="lang-chips" id="lang-chips" role="group" aria-label="Idiomas">
+        <button class="lang-chip" data-lang="pt"   aria-pressed="false">🇧🇷 PT</button>
+        <button class="lang-chip" data-lang="pt-BR" aria-pressed="false">🇧🇷 PT-BR</button>
+        <button class="lang-chip" data-lang="en"   aria-pressed="false">🇺🇸 EN</button>
+        <button class="lang-chip" data-lang="es"   aria-pressed="false">🇪🇸 ES</button>
+        <button class="lang-chip" data-lang="fr"   aria-pressed="false">🇫🇷 FR</button>
+        <button class="lang-chip" data-lang="de"   aria-pressed="false">🇩🇪 DE</button>
+        <button class="lang-chip" data-lang="it"   aria-pressed="false">🇮🇹 IT</button>
+        <button class="lang-chip" data-lang="ja"   aria-pressed="false">🇯🇵 JA</button>
+        <button class="lang-chip" data-lang="auto" aria-pressed="false">🤖 Auto-detectar</button>
+      </div>
+    </div>
+
+    <!-- 1.3 Extract Button -->
+    <button class="btn btn-primary mb-20" id="btn-extract" aria-label="Extrair transcrições do canal">
+      <span>⚡</span> Analisar Canal e Extrair Transcrições
+    </button>
+
+    <!-- Transcripts Output -->
+    <div id="transcripts-section" class="hidden">
+      <div class="section-label">Transcrições Extraídas</div>
+      <div class="transcript-list" id="transcript-list" aria-live="polite"></div>
+    </div>
+
+    <!-- ============================================================
+         MODULE 2 — ANÁLISE DE CANAL (expands after extraction)
+         ============================================================ -->
+    <div class="analysis-section" id="analysis-section">
+
+      <div class="section-title">
+        <span>🔬</span> Análise de Canal
+        <span class="section-title-badge">NOVO</span>
+      </div>
+
+      <!-- 2.1 Visual References -->
+      <div class="card">
+        <div class="card-header">
+          <div class="step-badge" style="background:linear-gradient(135deg,#0891b2,#22d3ee);box-shadow:0 0 14px rgba(6,182,212,0.4);">2.1</div>
+          <div>
+            <div class="card-title">Referências Visuais do Canal</div>
+            <div class="card-subtitle">Thumbnails capturados automaticamente + upload manual opcional</div>
+          </div>
+        </div>
+
+        <label class="input-label">Thumbnails Capturados (Auto)</label>
+        <div class="thumbnails-grid" id="thumbnails-grid" aria-label="Thumbnails do canal"></div>
+
+        <label class="input-label mt-16">Adicionar Imagens Manualmente <span style="color:var(--text-muted)">(opcional)</span></label>
+        <div class="drop-zone" id="drop-zone" role="button" tabindex="0"
+             aria-label="Área para arrastar e soltar imagens">
+          <div class="drop-zone-icon">🖼️</div>
+          <div class="drop-zone-text">Arraste e solte prints do canal aqui</div>
+          <div class="drop-zone-subtext">ou clique para selecionar arquivos · PNG, JPG, WEBP</div>
+        </div>
+        <input type="file" id="upload-images" multiple accept="image/*" class="hidden" aria-hidden="true">
+        <div class="thumbnails-grid" id="uploaded-images-grid"></div>
+      </div>
+
+      <!-- 2.2 AI Analysis -->
+      <div class="card">
+        <div class="card-header">
+          <div class="step-badge" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">2.2</div>
+          <div>
+            <div class="card-title">Análise Inteligente com IA</div>
+            <div class="card-subtitle">A IA analisa transcrições e gera um Briefing Completo do canal</div>
+          </div>
+        </div>
+
+        <button class="btn btn-cyan" id="btn-analyze">
+          🔬 Analisar Canal com IA
+        </button>
+
+        <!-- Progress -->
+        <div id="analysis-progress" class="hidden mt-16">
+          <div class="progress-container">
+            <div class="progress-label">
+              <span class="status-msg" id="analysis-progress-msg">
+                <span class="status-dot"></span> Inicializando...
+              </span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="analysis-progress-fill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Briefing Output -->
+        <div id="briefing-section" class="hidden mt-16">
+          <div id="briefing-card" class="briefing-card"></div>
+        </div>
+      </div>
+
+      <!-- 2.3 Master Prompt -->
+      <div class="card">
+        <div class="card-header">
+          <div class="step-badge" style="background:linear-gradient(135deg,#059669,#34d399);box-shadow:0 0 14px rgba(16,185,129,0.4);">2.3</div>
+          <div>
+            <div class="card-title">Prompt Mestre Gerado</div>
+            <div class="card-subtitle">Criado automaticamente com base na análise. Edite antes de usar.</div>
+          </div>
+        </div>
+
+        <textarea
+          id="master-prompt-output"
+          class="input"
+          rows="10"
+          placeholder="O Prompt Mestre será gerado automaticamente após a análise do canal com IA..."
+          aria-label="Prompt Mestre gerado"
+        ></textarea>
+
+        <div class="hint hint-info mt-12">
+          <span class="hint-icon">💡</span>
+          <span>Este prompt foi criado com base na análise do canal. Edite para refinar o estilo ou tema dos roteiros gerados.</span>
+        </div>
+
+        <button class="btn btn-success mt-16" id="btn-use-prompt">
+          🚀 Usar este Prompt → Ir para Gerar Roteiros
+        </button>
+      </div>
+
+    </div><!-- /analysis-section -->
+
+  </div><!-- /tab-extract -->
+
+  <!-- ==============================================================
+       TAB 2 — GERAR ROTEIROS
+       ============================================================== -->
+  <div class="tab-panel" id="tab-scripts" role="tabpanel" aria-labelledby="tab-btn-scripts">
+
+    <!-- 3.1 Theme -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">1</div>
+        <div>
+          <div class="card-title">Tema / Nicho <span class="text-muted text-sm" style="font-weight:400;">(Opcional)</span></div>
+          <div class="card-subtitle">Pré-preenchido pelo Nicho Detectado. Edite para refinar.</div>
+        </div>
+      </div>
+      <textarea
+        id="theme-input"
+        class="input"
+        rows="4"
+        placeholder="Ex: Histórias de terror paranormal reais com ambientação noturna e sensação de medo crescente..."
+        aria-label="Tema ou nicho do roteiro"
+      ></textarea>
+    </div>
+
+    <!-- 3.2 Master Prompt -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">2</div>
+        <div>
+          <div class="card-title">Prompt Mestre</div>
+          <div class="card-subtitle">Instrução principal para geração dos roteiros — pré-preenchida pela análise</div>
+        </div>
+      </div>
+      <textarea
+        id="master-prompt-input"
+        class="input"
+        rows="10"
+        placeholder="Cole ou escreva o prompt principal aqui. Após analisar um canal, este campo é preenchido automaticamente com o estilo detectado..."
+        aria-label="Prompt Mestre"
+      ></textarea>
+      <div class="hint hint-info mt-12">
+        <span class="hint-icon">💡</span>
+        <span>Gerado automaticamente pela análise. Edite livremente para ajustar o estilo, tom ou estrutura dos roteiros.</span>
+      </div>
+    </div>
+
+    <!-- 3.3 CTA -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">3</div>
+        <div>
+          <div class="card-title">CTA Personalizada <span class="text-muted text-sm" style="font-weight:400;">(Opcional)</span></div>
+          <div class="card-subtitle">Chamada para ação inserida no final de cada roteiro</div>
+        </div>
+      </div>
+      <input
+        type="text"
+        id="cta-input"
+        class="input"
+        placeholder="Ex: Siga para mais histórias como esta. Link na bio para aprender a monetizar no YouTube."
+        aria-label="CTA personalizada"
+      >
+    </div>
+
+    <!-- 3.4 Negative Prompts -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">4</div>
+        <div>
+          <div class="card-title">Prompts Negativos <span class="text-muted text-sm" style="font-weight:400;">(Opcional)</span></div>
+          <div class="card-subtitle">O que a IA NÃO deve usar nos roteiros</div>
+        </div>
+      </div>
+      <textarea
+        id="negative-prompts-input"
+        class="input"
+        rows="4"
+        placeholder="Ex: não citar nome do canal, não copiar trechos das transcrições, evitar clichês óbvios, não mencionar marcas específicas..."
+        aria-label="Prompts negativos"
+      ></textarea>
+    </div>
+
+    <!-- 3.5 Script Size -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">5</div>
+        <div>
+          <div class="card-title">Tamanho do Roteiro</div>
+        </div>
+      </div>
+      <div class="btn-group" id="size-group">
+        <button class="btn-option" data-size="200">200 palavras</button>
+        <button class="btn-option" data-size="500">500 palavras</button>
+        <button class="btn-option" data-size="1000">1.000 palavras</button>
+        <button class="btn-option" data-size="2000">2.000 palavras</button>
+        <button class="btn-option" data-size="5000">5.000 palavras</button>
+        <button class="btn-option" data-size="other">Outro</button>
+        <input
+          type="number"
+          id="size-input"
+          class="input btn-option-num hidden"
+          min="100"
+          max="20000"
+          placeholder="Ex: 3000"
+          aria-label="Tamanho personalizado em palavras"
+        >
+      </div>
+    </div>
+
+    <!-- 3.6 Script Count -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">6</div>
+        <div>
+          <div class="card-title">Quantos Roteiros?</div>
+        </div>
+      </div>
+      <div class="btn-group" id="count-group">
+        <button class="btn-option" data-count="5">5</button>
+        <button class="btn-option" data-count="10">10</button>
+        <button class="btn-option" data-count="20">20</button>
+        <button class="btn-option" data-count="50">50</button>
+        <button class="btn-option" data-count="other">Outro</button>
+        <input
+          type="number"
+          id="count-input"
+          class="input btn-option-num hidden"
+          min="1"
+          max="100"
+          placeholder="Ex: 15"
+          aria-label="Quantidade personalizada de roteiros"
+        >
+      </div>
+      <div class="hint mt-12">
+        <span class="hint-icon">⚠️</span>
+        <span>Para melhor qualidade e custo, gere <strong>5–10 roteiros</strong> por vez. Quantidades maiores consomem mais tokens de API.</span>
+      </div>
+    </div>
+
+    <!-- 3.7 Output Language -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">7</div>
+        <div>
+          <div class="card-title">Idioma de Saída</div>
+          <div class="card-subtitle">Pré-selecionado com base no idioma principal do canal detectado</div>
+        </div>
+      </div>
+      <select id="output-language" class="input" aria-label="Idioma de saída dos roteiros">
+        <option value="Português (Brasil)">🇧🇷 Português (Brasil)</option>
+        <option value="Português (Portugal)">🇵🇹 Português (Portugal)</option>
+        <option value="English">🇺🇸 English</option>
+        <option value="Español">🇪🇸 Español</option>
+        <option value="Français">🇫🇷 Français</option>
+        <option value="Deutsch">🇩🇪 Deutsch</option>
+        <option value="Italiano">🇮🇹 Italiano</option>
+        <option value="日本語">🇯🇵 日本語</option>
+        <option value="中文 (简体)">🇨🇳 中文 (简体)</option>
+        <option value="Русский">🇷🇺 Русский</option>
+        <option value="العربية">🇸🇦 العربية</option>
+      </select>
+    </div>
+
+    <!-- Generate Button -->
+    <button class="btn btn-success mb-16" id="btn-generate" aria-label="Gerar roteiros em massa">
+      <span>🚀</span> Gerar Roteiros em Massa
+    </button>
+
+  </div><!-- /tab-scripts -->
+
+  <!-- ==============================================================
+       TAB 3 — RESULTADOS
+       ============================================================== -->
+  <div class="tab-panel" id="tab-results" role="tabpanel" aria-labelledby="tab-btn-results">
+
+    <!-- Empty State -->
+    <div id="results-empty" class="empty-state">
+      <div class="empty-icon">📄</div>
+      <div class="empty-title">Nenhum roteiro gerado ainda</div>
+      <div class="empty-text">Vá para a aba <strong>Gerar Roteiros</strong>, configure suas preferências e clique em <em>"Gerar Roteiros em Massa"</em>.</div>
+    </div>
+
+    <!-- Generation Progress -->
+    <div id="results-progress" class="card hidden">
+      <div class="progress-container">
+        <div class="progress-label">
+          <span class="status-msg" id="results-progress-msg">
+            <span class="status-dot"></span> Iniciando geração...
+          </span>
+          <span id="results-progress-pct" style="color:var(--purple-400);font-weight:700;font-size:0.85rem;">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="results-progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Download All -->
+    <div id="download-all-bar" class="hidden mb-16">
+      <button class="btn btn-secondary w-full" onclick="downloadAllScripts()" id="btn-download-all">
+        📦 Baixar Todos os Roteiros (ZIP)
+      </button>
+    </div>
+
+    <!-- Scripts List -->
+    <div class="scripts-list" id="scripts-list" aria-live="polite"></div>
+
+  </div><!-- /tab-results -->
+
+</main>
+
+<!-- ================================================================
+     SETTINGS MODAL
+     ================================================================ -->
+<div class="modal-overlay" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="settings-modal-title">⚙️ Configurações</h2>
+      <button class="modal-close" id="settings-close" aria-label="Fechar configurações">✕</button>
+    </div>
+
+    <!-- API Key -->
+    <div class="modal-section">
+      <div class="modal-section-label">🔑 OpenRouter API Key</div>
+      <label class="input-label">Chave API</label>
+      <input
+        type="password"
+        id="api-key-input"
+        class="input"
+        placeholder="sk-or-v1-..."
+        autocomplete="off"
+        aria-label="Chave API do OpenRouter"
+      >
+      <div class="hint hint-info mt-8">
+        <span class="hint-icon">💡</span>
+        <span>Obtenha sua chave em <strong>openrouter.ai/keys</strong>. Salva localmente no seu navegador — nunca enviada a terceiros.</span>
+      </div>
+      <button class="btn btn-secondary btn-sm mt-12" id="btn-test-api" style="width:100%;">
+        🔗 Testar Conexão
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Models -->
+    <div class="modal-section">
+      <div class="modal-section-label">🤖 Modelos de IA</div>
+
+      <label class="input-label">Modelo para Análise de Canal</label>
+      <select id="analysis-model-select" class="input" style="margin-bottom:8px;" aria-label="Modelo de análise"></select>
+      <input type="text" id="analysis-model-custom" class="input hidden" style="margin-bottom:14px;" placeholder="Ex: google/gemini-1.5-pro" aria-label="Modelo manual de análise">
+
+      <label class="input-label">Modelo para Geração de Roteiros</label>
+      <select id="generation-model-select" class="input" style="margin-bottom:8px;" aria-label="Modelo de geração"></select>
+      <input type="text" id="generation-model-custom" class="input hidden" style="margin-bottom:14px;" placeholder="Ex: anthropic/claude-3-opus" aria-label="Modelo manual de geração">
+
+      <div class="hint mt-8">
+        <span class="hint-icon">💡</span>
+        <span>Modelos mais rápidos (Haiku, GPT-4o Mini) custam menos. Use modelos premium para roteiros mais elaborados.</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <button class="btn btn-primary" id="btn-save-settings">
+      💾 Salvar Configurações
+    </button>
+  </div>
+</div>
+
+<!-- ================================================================
+     VIEW TRANSCRIPT MODAL
+     ================================================================ -->
+<div class="modal-overlay" id="view-modal" role="dialog" aria-modal="true" aria-labelledby="view-modal-title">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <h2 class="modal-title" id="view-modal-title">Transcrição</h2>
+      <button class="modal-close" id="view-modal-close" aria-label="Fechar">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-secondary btn-sm" id="btn-copy-transcript">📋 Copiar</button>
+      <span id="view-modal-wc" class="text-xs text-muted" style="align-self:center;"></span>
+    </div>
+    <div class="transcript-body" id="view-modal-body"></div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
